@@ -7,6 +7,6 @@ export const siteConfig = {
 
   links: {
     twitter: "https://twitter.com/openrouterai",
-    github: "https://github.com/NolanGC/window.ai-3d-starter",
+    github: "https://github.com/YanniKouloumbis/openrouter-3d-starter",
   },
 }
