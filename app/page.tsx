@@ -46,6 +46,7 @@ export default function Home() {
         .then(res => {
           if (res.key) {
             localStorage.setItem('openrouterApiKey', res.key);
+            setOpenrouterApiKey(res.key);
           }
         })
         .catch(err => console.error(err));
