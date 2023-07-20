@@ -1,10 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { getWindowAI } from "window.ai";
 import CanvasComponent from "@/components/canvas";
 import { Button } from "@/components/ui/button";
-import { ToastAction } from "@/components/ui/toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader } from "lucide-react";
 import { Label } from "@/components/ui/label";
@@ -17,19 +14,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-
-function InstallButton() {
-  const handleClick = () => {
-    window.open(
-      "https://chrome.google.com/webstore/detail/window-ai/cbhbgmdpcoelfdoihppookkijpmgahag",
-      "_blank"
-    );
-  };
-
-  return <Button onClick={handleClick}>Install</Button>;
-}
+import { useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 
 export default function Home() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast();
   const [objectLink, setObjectLink] = useState<string>(
     "A chair shaped like an avocado.ply"
@@ -37,46 +27,61 @@ export default function Home() {
   const [inputText, setInputText] = useState("");
   const [generating, setGenerating] = useState<boolean>(false);
   const [numInferenceSteps, setNumInferenceSteps] = useState<number>(32);
+  const [openrouterApiKey, setOpenrouterApiKey] = useState<string>("");
   const ai = useRef<any>(null);
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        const windowAI = await getWindowAI();
-        ai.current = windowAI;
-        toast({ title: "window.ai detected." });
-      } catch (error) {
-        toast({
-          title: "Please install window.ai",
-          action: (
-            <ToastAction asChild altText="install">
-              <InstallButton></InstallButton>
-            </ToastAction>
-          ),
-        });
-      }
-    };
-    init();
-  }, []);
+    if(localStorage.getItem('openrouterApiKey')){
+      setOpenrouterApiKey(localStorage.getItem('openrouterApiKey') as string)
+    }
+    else{
+      const code = searchParams.get('code')
+      if(code){
+        fetch("https://openrouter.ai/api/v1/auth/keys", {
+          method: 'POST',
+          body: JSON.stringify({
+            code: code,
+          })
+        }).then((res) => {
+          return res.json()
+        }
+        ).then((res) => {
+          if(res.key){
+            localStorage.setItem('openrouterApiKey', res.key);
+          }
+        }
+        ).catch((err) => {
+          console.error(err)
+        })
+    }
+    }
+}, [])
 
-  // Generate 3D object with window.ai. Supply a prompt and number of inference steps and receive a data URI.
+  // Generate 3D object with openrouter. Supply a prompt and number of inference steps and receive a data URI.
   const generate3DObject = async () => {
-    const promptObject = { prompt: inputText };
-    const output = await ai.current.BETA_generate3DObject(promptObject, {
-      extension: "application/x-ply",
-      numInferenceSteps: numInferenceSteps,
-    });
-
-    return output[0].uri;
+    const output = await fetch("https://openrouter.ai/api/v1/media/generations", {
+      method: 'POST',
+      body: JSON.stringify({
+        prompt: inputText,
+        numInferenceSteps: numInferenceSteps
+        }),
+      headers: {
+        "HTTP-Referer": "https://test.com",
+        "X-Title": "test",
+        "Authorization": `Bearer ${openrouterApiKey}`
+      }
+    })
+    const generations = await output.json()
+    return generations.data[0].uri;
   };
 
   // Handle generation.
   const handleGenerate = async () => {
     try {
       setGenerating(true);
-      if (!ai.current) {
-        toast({ title: "Error loading window.ai." });
-        return;
+      if(!openrouterApiKey){
+        toast({ title: "Please login with Openrouter." });
+        return
       }
       const dataUri = await generate3DObject();
       setObjectLink(dataUri);
@@ -86,6 +91,7 @@ export default function Home() {
       setGenerating(false);
     }
   };
+  
   const handleDownload = () => {
     const link = document.createElement("a");
     link.href = objectLink as string;
@@ -129,6 +135,16 @@ export default function Home() {
                 Download Model
               </Button>
             </div>
+            <Button className="mt-2" onClick={()=> {
+              if(openrouterApiKey){
+              localStorage.removeItem('openrouterApiKey')
+              setOpenrouterApiKey('')
+              }
+              else{
+                router.push(`https://openrouter.ai/auth?callback_url=${window.location.origin + window.location.pathname}`)}
+              }}>
+                {openrouterApiKey ? "Clear Openrouter API Key" : "Login With Openrouter"}
+              </Button>
           </div>
           <div className="w-full md:w-1/2 h-full overflow-auto p-1">
             {objectLink && <CanvasComponent objectLink={objectLink} />}
