@@ -22,9 +22,7 @@ export default function Home() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
-  const [objectLink, setObjectLink] = useState<string>(
-    "A chair shaped like an avocado.ply"
-  )
+  const [objectLink, setObjectLink] = useState<string>("A chair shaped like an avocado.ply")
   const [inputText, setInputText] = useState("")
   const [generating, setGenerating] = useState<boolean>(false)
   const [numInferenceSteps, setNumInferenceSteps] = useState<number>(32)
@@ -56,7 +54,7 @@ export default function Home() {
   
   // Sends POST request to generate a 3D object based on prompt and number of inference steps provided as input.
   const generate3DObject = async (): Promise<string> => {
-    const output = await fetch("https://openrouter.ai/api/v1/media/generations", {
+    const output = await fetch("https://openrouter.ai/api/v1/objects/generations", {
       method: 'POST',
       body: JSON.stringify({
         prompt: inputText,
