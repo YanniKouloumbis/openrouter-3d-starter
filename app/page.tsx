@@ -66,8 +66,9 @@ export default function Home() {
         "Authorization": `Bearer ${openrouterApiKey}`
       }
     });
-    const generations = await output.json();
-    return generations.data[0].uri;
+    const res = await output.json();
+    const generations = res.generations;
+    return generations[0].uri;
   };
   
   /** 
