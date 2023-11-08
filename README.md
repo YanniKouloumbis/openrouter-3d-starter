@@ -3,7 +3,7 @@
 
 Generate 3D objects in the browser with [window.ai](https://windowai.io/) and OpenAI's [shap-e](https://github.com/openai/shap-e). 
 
-Try the [Web Demo](https://window-3d-demo.vercel.app/)!
+Try the [Web Demo](https://openrouter-3d.vercel.app/)!
 ### How it works
 1) Retrieve the window.ai object from the browser
 ```javascript
